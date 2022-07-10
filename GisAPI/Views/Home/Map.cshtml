@@ -1,0 +1,36 @@
+﻿@{
+    ViewData["Title"] = "Map";
+}
+
+<form asp-controller="home" asp-action="map" class="text-center" style="padding-top: 10px">
+    <button type="submit">Скачать Excel</button>
+</form>
+
+<div id="container" style="margin: 0; width: 100%; height: 1000px; overflow: hidden; padding-top: 20px"></div>
+
+<script src="https://mapgl.2gis.com/api/js/v1"></script>
+<script src="https://unpkg.com/@@2gis/mapgl-clusterer@@^2/dist/clustering.js"></script>
+
+<script>
+    const map = new mapgl.Map('container', {
+    key: 'b4cf0277-d6a6-4d6d-8f5f-a246c6f6ac64',
+    center: [49.66, 58.60],
+    zoom: 13,
+    });
+
+    const clusterer = new mapgl.Clusterer(map, {
+        radius: 60,
+    });
+
+    var coords = @Html.Raw(Json.Serialize(ViewBag.addresses));
+    const markers = []
+    coords.forEach((coord) => {
+        const marker = {
+            coordinates: coord,
+        }
+        markers.push(marker);
+    });
+
+    clusterer.load(markers);
+
+</script>
