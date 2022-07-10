@@ -65,37 +65,71 @@ namespace GisAPI.Controllers
             {
                 xssfwb = new XSSFWorkbook(fileStream);
             }
-            var daDatatoken = "a8736e9ed0f081d84ba27c45c4fc86ddac04183a";
-            var api = new SuggestClient(daDatatoken);
 
             sheet = xssfwb.GetSheetAt(0);
 
             GeoCoordinates.coordinates = new double[sheet.LastRowNum][];
-            //coordinates = new double[sheet.LastRowNum][];
 
-            for (int row = 6; row <= sheet.LastRowNum; row++)
+            var rows = Enumerable.Range(6, sheet.LastRowNum).Select(sheet.GetRow).Where(r => r != null).ToList();
+            var tasks = new Task<double[][]>[2];
+
+            tasks[0] = new Task<double[][]>(() => GetTask(rows.Take(new Range(0, rows.Count / 2))));
+            tasks[1] = new Task<double[][]>(() => GetTask(rows.Take(new Range(rows.Count / 2, rows.Count))));
+
+            tasks[0].Start();
+            tasks[1].Start();
+            GeoCoordinates.coordinates = tasks[0].Result.Concat(tasks[1].Result).ToArray();
+
+            //for (int row = 6; row <= sheet.LastRowNum; row++)
+            //{
+            //    string address = "";
+
+            //    if (sheet.GetRow(row) != null)
+            //    {
+            //        address += sheet.GetRow(row).GetCell(12).ToString();
+            //    }
+
+            //    var result = api.SuggestAddress(address);
+
+            //    if (result.suggestions.Count == 0)
+            //    {
+            //        break;
+            //    }
+            //    GeoCoordinates.coordinates[row-6] = new double[2];
+            //    GeoCoordinates.coordinates[row-6][0] = Convert.ToDouble(result.suggestions[0].data.geo_lon.Replace(".", ","));
+            //    GeoCoordinates.coordinates[row-6][1] = Convert.ToDouble(result.suggestions[0].data.geo_lat.Replace(".", ","));
+
+            //}
+            GeoCoordinates.coordinates = GeoCoordinates.coordinates.Where(c => c != null).ToArray();
+            return GeoCoordinates.coordinates;
+        }
+
+        private double[][] GetTask(IEnumerable<IRow> rows)
+        {
+            var tmp = rows.ToArray();
+            var res = new double[tmp.Length][];
+
+            var daDatatoken = "a8736e9ed0f081d84ba27c45c4fc86ddac04183a";
+            var api = new SuggestClient(daDatatoken);
+
+            for (int i = 0; i < tmp.Length; i++)
             {
                 string address = "";
 
-                if (sheet.GetRow(row) != null)
-                {
-                    address += sheet.GetRow(row).GetCell(12).ToString();
-                }
-                
+                address += tmp[i].GetCell(12).ToString();
+
                 var result = api.SuggestAddress(address);
 
                 if (result.suggestions.Count == 0)
                 {
                     break;
                 }
-                GeoCoordinates.coordinates[row-6] = new double[2];
-                GeoCoordinates.coordinates[row-6][0] = Convert.ToDouble(result.suggestions[0].data.geo_lon.Replace(".", ","));
-                GeoCoordinates.coordinates[row-6][1] = Convert.ToDouble(result.suggestions[0].data.geo_lat.Replace(".", ","));
-
+                res[i] = new double[2];
+                res[i][0] = Convert.ToDouble(result.suggestions[0].data.geo_lon.Replace(".", ","));
+                res[i][1] = Convert.ToDouble(result.suggestions[0].data.geo_lat.Replace(".", ","));
 
             }
-            GeoCoordinates.coordinates = GeoCoordinates.coordinates.Where(c => c != null).ToArray();
-            return GeoCoordinates.coordinates;
+            return res;
         }
 
         public static string FillPathExcell(ISheet excelSheet, double[][] coordinates)
