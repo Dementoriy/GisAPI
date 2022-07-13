@@ -80,26 +80,6 @@ namespace GisAPI.Controllers
             tasks[1].Start();
             GeoCoordinates.coordinates = tasks[0].Result.Concat(tasks[1].Result).ToArray();
 
-            //for (int row = 6; row <= sheet.LastRowNum; row++)
-            //{
-            //    string address = "";
-
-            //    if (sheet.GetRow(row) != null)
-            //    {
-            //        address += sheet.GetRow(row).GetCell(12).ToString();
-            //    }
-
-            //    var result = api.SuggestAddress(address);
-
-            //    if (result.suggestions.Count == 0)
-            //    {
-            //        break;
-            //    }
-            //    GeoCoordinates.coordinates[row-6] = new double[2];
-            //    GeoCoordinates.coordinates[row-6][0] = Convert.ToDouble(result.suggestions[0].data.geo_lon.Replace(".", ","));
-            //    GeoCoordinates.coordinates[row-6][1] = Convert.ToDouble(result.suggestions[0].data.geo_lat.Replace(".", ","));
-
-            //}
             GeoCoordinates.coordinates = GeoCoordinates.coordinates.Where(c => c != null).ToArray();
             return GeoCoordinates.coordinates;
         }
